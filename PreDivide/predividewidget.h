@@ -4,11 +4,16 @@
 #include <QWidget>
 #include <QPushButton>
 #include <vector>
+#include <map>
+#include <set>
 #include <QProcess>
 #include <QThread>
 #include <QPolygonF>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QMenu>
+#include <QAction>
+#include <QColorDialog>
 
 
 #include "QVTKOpenGLNativeWidget.h"
@@ -64,6 +69,9 @@
 #include <vtkPointData.h>
 #include <vtkCamera.h>
 #include <vtkImageStencilToImage.h>
+#include <vtkImageLogic.h>
+#include <vtkMultiVolume.h>
+#include <vtkImageMathematics.h>
 
 #include <vtkAutoInit.h>
 VTK_MODULE_INIT(vtkRenderingOpenGL2);
@@ -94,6 +102,13 @@ struct MyPosData {
 	double d[3];
 };
 
+enum selWorkType
+{
+	nothingToDo = 0,
+	toCut = 1,
+	toDaub = 2
+};
+
 class threadWaitAIexit : public QThread
 {
 	Q_OBJECT;
@@ -107,6 +122,13 @@ protected:
 	virtual void run();
 private:
 	HANDLE m_handle;
+};
+
+class listUserData : public QObjectUserData
+{
+public:
+	int btnId;
+	int labelId;
 };
 
 
@@ -163,13 +185,26 @@ private slots:
 	void eraseBtn_clicked();
 	void programClosedSlot();
 	void cutDataSlot(QList<QPointF> &l);
+	void SlotMenuClicked(QAction* act);
+	void tableContexMenuRequested(const QPoint &pos);
+	void on_DuabBtn_clicked();
+	void on_CheckLabelCountBtn_clicked();
 private:
-	threadWaitAIexit t;
+	void saveRestoreData();
+	void duabArea(const QPolygonF & polygon);
+	void rebuildList();
+	threadWaitAIexit waitThread;
     Ui::PreDivideWidget *ui;
-    QPushButton m_bt[9];
+    map<int, vector<QPushButton*>> m_bt;
 	QVTKRenderWindow m_3DViewWidget;
 	QVTKRenderWindow m_2DViewWidget[3];
 	QProcess myProcess;
+	QMenu* m_pContextMenu;
+	QAction* m_pActionDel;
+	QAction* m_pActionMerge;
+	QMenu* m_pSaveMenu;
+	QAction* m_pActionSaveAsLeft;
+	QAction* m_pActionSaveAsRight;
 	vtkSmartPointer<vtkRenderWindowInteractor> iren;
 	vtkSmartPointer<MyvtkInteractorStyle> m_3dViewStyle;
 	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor1;
@@ -195,7 +230,23 @@ private:
 	vtkSmartPointer<vtkImageFlip> m_vtkImageFlip;
 	vtkSmartPointer<vtkWorldPointPicker> m_WorldPointPicker;
 	vtkSmartPointer<vtkImageData> image_data;
-	vtkSmartPointer<vtkVolume> volume;
+	vtkSmartPointer<vtkImageData> empty_data;
+	map<int, vtkSmartPointer<vtkImageData>> imagedata;
+	map<int, vtkSmartPointer<vtkImageData>> m_restoreData;
+	map<int, vtkSmartPointer<vtkVolume>> volume;
+	vtkSmartPointer<vtkMultiVolume> volumeMulti;
+	vtkSmartPointer<vtkGPUVolumeRayCastMapper> volumeMapper;
+	map<int,vtkSmartPointer<vtkVolumeProperty>> volumeProperty;
+	map<int, vtkSmartPointer<vtkPiecewiseFunction>> compositeOpacity;
+	map<int, vtkSmartPointer<vtkColorTransferFunction>> color;
+	map<int, unsigned char*> m_pDataPointer;
+	map<int, bool> m_labelVisible;
+	map<int, QColor> m_labelColor;
+	vector<int> m_removedRow;
+	int m_curOutValue = 100;
+	QList<vtkSmartPointer<vtkImageStencilToImage>> m_undoData;
+	int m_MaxDataDimension = 0;
+	selWorkType m_curSelWorkType;
 };
 
 

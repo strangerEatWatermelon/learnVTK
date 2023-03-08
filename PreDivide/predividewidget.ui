@@ -122,7 +122,7 @@
       <widget class="QWidget" name="widget_2" native="true">
        <property name="maximumSize">
         <size>
-         <width>220</width>
+         <width>250</width>
          <height>16777215</height>
         </size>
        </property>
@@ -205,22 +205,6 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="m_preBtnDivide">
-               <property name="maximumSize">
-                <size>
-                 <width>60</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">color:rgb(255,255,255);background-color:rgb(54, 54, 54)</string>
-               </property>
-               <property name="text">
-                <string>分割</string>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QPushButton" name="m_preBtnCut">
                <property name="maximumSize">
                 <size>
@@ -233,6 +217,22 @@
                </property>
                <property name="text">
                 <string>截取</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="m_preBtnDivide">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">color:rgb(255,255,255);background-color:rgb(54, 54, 54)</string>
+               </property>
+               <property name="text">
+                <string>分割</string>
                </property>
               </widget>
              </item>
@@ -301,12 +301,15 @@
              </property>
              <property name="maximumSize">
               <size>
-               <width>190</width>
-               <height>160</height>
+               <width>16777215</width>
+               <height>16777215</height>
               </size>
              </property>
              <property name="styleSheet">
               <string notr="true">color:rgb(255,255,255);</string>
+             </property>
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
              </property>
             </widget>
            </item>
@@ -318,11 +321,11 @@
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>90</height>
+            <height>160</height>
            </size>
           </property>
           <property name="styleSheet">
-           <string notr="true">QGroupBox{background-image: url(:/ui/res/Icons/Segmentation/background1.png);background-color:rgba(0,0,0,0);}</string>
+           <string notr="true">QGroupBox{background-image: url(:/ui/res/Icons/Segmentation/background3.png);background-color:rgba(0,0,0,0);}</string>
           </property>
           <property name="title">
            <string/>
@@ -398,6 +401,93 @@
                </property>
                <property name="text">
                 <string>导出</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
+              <widget class="QPushButton" name="m_daub">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">color:rgb(255,255,255);background-color:rgb(54, 54, 54)</string>
+               </property>
+               <property name="text">
+                <string>涂抹</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_4">
+               <property name="maximumSize">
+                <size>
+                 <width>20</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">color:rgb(255,255,255);</string>
+               </property>
+               <property name="text">
+                <string>-&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="m_daubValue">
+               <property name="focusPolicy">
+                <enum>Qt::NoFocus</enum>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">color:rgb(255,255,255);
+QSpinBox::hover
+
+{
+
+background-color : rgb(0,0,0);
+
+}
+
+QSpinBox::pressed
+
+{
+
+background-color : rgb(0,0,0);
+
+}</string>
+               </property>
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>255</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <item>
+              <widget class="QPushButton" name="m_CheckLabelCount">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">color:rgb(255,255,255);background-color:rgb(54, 54, 54)</string>
+               </property>
+               <property name="text">
+                <string>check</string>
                </property>
               </widget>
              </item>
