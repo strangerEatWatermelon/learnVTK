@@ -122,7 +122,7 @@
       <widget class="QWidget" name="widget_2" native="true">
        <property name="maximumSize">
         <size>
-         <width>250</width>
+         <width>300</width>
          <height>16777215</height>
         </size>
        </property>
@@ -151,7 +151,7 @@
            </size>
           </property>
           <property name="styleSheet">
-           <string notr="true">QGroupBox{background-image: url(:/ui/res/Icons/Segmentation/background1.png);background-color:rgba(0,0,0,0);}</string>
+           <string notr="true">QGroupBox{background-color:rgba(0,0,0,0);border:none;}</string>
           </property>
           <property name="title">
            <string/>
@@ -160,7 +160,8 @@
            <item>
             <widget class="QLabel" name="label">
              <property name="styleSheet">
-              <string notr="true">color:rgb(255,255,255);</string>
+              <string notr="true">color:rgb(255,255,255);
+border-image:url(:/Icons/Segmentation/frameLabel.png);</string>
              </property>
              <property name="text">
               <string>预处理</string>
@@ -256,7 +257,7 @@
            </size>
           </property>
           <property name="styleSheet">
-           <string notr="true">QGroupBox{background-image: url(:/ui/res/Icons/Segmentation/background3.png);background-color:rgba(0,0,0,0);}</string>
+           <string notr="true">QGroupBox{background-color:rgba(0,0,0,0);border:none;}</string>
           </property>
           <property name="title">
            <string/>
@@ -265,7 +266,8 @@
            <item>
             <widget class="QLabel" name="label_2">
              <property name="styleSheet">
-              <string notr="true">color:rgb(255,255,255);</string>
+              <string notr="true">color:rgb(255,255,255);
+border-image:url(:/Icons/Segmentation/frameLabel.png);</string>
              </property>
              <property name="text">
               <string>mask列表</string>
@@ -306,7 +308,7 @@
               </size>
              </property>
              <property name="styleSheet">
-              <string notr="true">color:rgb(255,255,255);</string>
+              <string notr="true">color:rgb(255,255,255);border:none;</string>
              </property>
              <property name="selectionBehavior">
               <enum>QAbstractItemView::SelectRows</enum>
@@ -325,7 +327,7 @@
            </size>
           </property>
           <property name="styleSheet">
-           <string notr="true">QGroupBox{background-image: url(:/ui/res/Icons/Segmentation/background3.png);background-color:rgba(0,0,0,0);}</string>
+           <string notr="true">QGroupBox{background-color:rgba(0,0,0,0);border:none;}</string>
           </property>
           <property name="title">
            <string/>
@@ -334,7 +336,8 @@
            <item>
             <widget class="QLabel" name="label_3">
              <property name="styleSheet">
-              <string notr="true">color:rgb(255,255,255);</string>
+              <string notr="true">color:rgb(255,255,255);
+border-image:url(:/Icons/Segmentation/frameLabel.png);</string>
              </property>
              <property name="text">
               <string>剪切</string>
@@ -428,7 +431,7 @@
               <widget class="QLabel" name="label_4">
                <property name="maximumSize">
                 <size>
-                 <width>20</width>
+                 <width>60</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -441,33 +444,15 @@
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="m_daubValue">
-               <property name="focusPolicy">
-                <enum>Qt::NoFocus</enum>
+              <widget class="QComboBox" name="m_daubValue">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
                </property>
                <property name="styleSheet">
-                <string notr="true">color:rgb(255,255,255);
-QSpinBox::hover
-
-{
-
-background-color : rgb(0,0,0);
-
-}
-
-QSpinBox::pressed
-
-{
-
-background-color : rgb(0,0,0);
-
-}</string>
-               </property>
-               <property name="minimum">
-                <number>1</number>
-               </property>
-               <property name="maximum">
-                <number>255</number>
+                <string notr="true">color:rgb(255,255,255);background-color:rgb(54, 54, 54)</string>
                </property>
               </widget>
              </item>

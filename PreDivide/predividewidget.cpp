@@ -559,16 +559,18 @@ void PreDivideWidget::showVolumeDataSlot()
 		volumeProperty[i] = vtkSmartPointer<vtkVolumeProperty>::New();
 		volumeProperty[i]->SetInterpolationTypeToLinear();
 		volumeProperty[i]->ShadeOn();
-		volumeProperty[i]->SetAmbient(0.8);
-		volumeProperty[i]->SetDiffuse(0.8);
+		volumeProperty[i]->SetAmbient(0.4);
+		volumeProperty[i]->SetDiffuse(0.6);
 		volumeProperty[i]->SetSpecular(0.2);
 		volumeProperty[i]->SetScalarOpacity(compositeOpacity[i]);
 		color[i] = vtkSmartPointer<vtkColorTransferFunction>::New();
 		compositeOpacity[i]->AddPoint(i, 1);
 		m_labelColor[i] = colorNames.at(i);
+		color[i]->AddRGBPoint(0, 0, 0, 0);
 		color[i]->AddRGBPoint(i, double(m_labelColor[i].red()) / 255.0,
 			double(m_labelColor[i].green()) / 255.0, 
 			double(m_labelColor[i].blue()) / 255.0);
+		color[i]->AddRGBPoint(m_MaxDataDimension + 1, 1, 1, 1);
 		volumeProperty[i]->SetColor(color[i]);
 		compositeOpacity[i]->AddPoint(m_MaxDataDimension + 1, 0);
 	}
@@ -578,18 +580,17 @@ void PreDivideWidget::showVolumeDataSlot()
 		volume[i] = vtkSmartPointer<vtkVolume>::New();
 		volume[i]->SetProperty(volumeProperty[i]);
 		imagedata[i] = vtkSmartPointer<vtkImageData>::New();
-		imagedata[i]->DeepCopy(image_data);
+		imagedata[i]->DeepCopy(empty_data);
 		m_pDataPointer[i] = (unsigned char*)imagedata[i]->GetScalarPointer();
 	}
 
+	unsigned char data_t = 0;
+	auto src_pData = (unsigned char*)image_data->GetScalarPointer();
 	for (vtkIdType i = 0; i < count; ++i)
 	{
-		for (int i = 1; i <= m_MaxDataDimension; ++i)
-		{
-			if (*m_pDataPointer[i] != i)
-				*m_pDataPointer[i] = 0;
-			++m_pDataPointer[i];
-		}
+		data_t = src_pData[i];
+		if (data_t > 0)
+			m_pDataPointer[data_t][i] = data_t;
 	}
 
 	volumeMulti = vtkSmartPointer<vtkMultiVolume>::New();
@@ -864,6 +865,8 @@ void PreDivideWidget::tableContexMenuRequested(const QPoint & pos)
 
 void PreDivideWidget::on_DuabBtn_clicked()
 {
+	if (ui->m_daubValue->currentText().isEmpty())
+		return;
 	if (m_curSelWorkType == toDaub)
 	{
 		m_curSelWorkType = nothingToDo;
@@ -921,7 +924,7 @@ void PreDivideWidget::duabArea(const QPolygonF & polygon)
 	image_data->GetOrigin(img_origian);
 	vtkNew<vtkCoordinate> corrdinate;
 	corrdinate->SetCoordinateSystemToWorld();
-	unsigned char value = (unsigned char)ui->m_daubValue->text().toInt();
+	unsigned char value = (unsigned char)ui->m_daubValue->currentText().toInt();
 	for (int k = 0; k < img_dims[2]; ++k) {
 		for (int i = 0; i < img_dims[0]; ++i) {
 			for (int j = 0; j < img_dims[1]; ++j) {
@@ -967,6 +970,7 @@ void PreDivideWidget::rebuildList()
 	ui->tableWidget->clear();
 	ui->tableWidget->setRowCount(m_MaxDataDimension);
 	ui->tableWidget->setColumnCount(3);
+	ui->m_daubValue->clear();
 	for (int i = 1; i <= m_MaxDataDimension; ++i) {
 		if (i < 4)
 			ui->tableWidget->setColumnWidth(i - 1, 60);
@@ -1012,8 +1016,9 @@ void PreDivideWidget::rebuildList()
 			d->labelId = i;
 			m_bt[i][t - 1]->setUserData(0, d);
 		}
+		ui->m_daubValue->addItem(QString::number(i));
 	}
-	ui->m_daubValue->setMaximum(m_MaxDataDimension);
+	ui->m_daubValue->setCurrentIndex(0);
 }
 
 QWidget* PreDivideWidget::get2d3dView()
