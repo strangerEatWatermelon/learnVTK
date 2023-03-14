@@ -180,12 +180,62 @@ void PreDivideWidget::on_OpenFile_clicked()
 		std::cout << ex << std::endl;
 		return;
 	}
-	ImageType::SizeType imgSize = reader->GetOutput()->GetLargestPossibleRegion().GetSize();
-	cout << "read done！Original size: " << imgSize << endl;
+	using FlipImageFilterType = itk::FlipImageFilter<ImageType>;
+	FlipImageFilterType::Pointer flipFilter = FlipImageFilterType::New();
+	flipFilter->SetInput(reader->GetOutput());
+	FlipImageFilterType::FlipAxesArrayType flipAxes;
+	double spacing[3];
+	double origin[3];
+	double direction[9];
+	unsigned int dim[3];
+	memcpy(direction, &reader->GetOutput()->GetDirection()[0][0], 9 * sizeof(double));
+	memcpy(spacing, &reader->GetOutput()->GetSpacing(), 3 * sizeof(double));
+	memcpy(origin, &reader->GetOutput()->GetOrigin()[0], 3 * sizeof(double));
+	const itk::Size<3> & size = reader->GetOutput()->GetLargestPossibleRegion().GetSize();
+	dim[0] = size[0];
+	dim[1] = size[1];
+	dim[2] = size[2];
+
+	if (direction[0] > 0)
+	{
+		flipAxes[0] = false;
+	}
+	else
+	{
+		flipAxes[0] = true;
+		origin[0] -= (dim[0] - 1) * spacing[0];
+	}
+	if (direction[4] > 0)
+	{
+		flipAxes[1] = false;
+	}
+	else
+	{
+		flipAxes[1] = true;
+		origin[1] -= (dim[1] - 1) * spacing[1];
+	}
+	if (direction[8] > 0)
+	{
+		flipAxes[2] = false;
+	}
+	else
+	{
+		flipAxes[2] = true;
+		origin[2] -= (dim[2] - 1) * spacing[2];
+	}
+	flipFilter->SetFlipAxes(flipAxes);
+	flipFilter->Update();
+	ImageType::Pointer img = flipFilter->GetOutput();
+	const double  originT[3] = { origin[0],origin[1],origin[2] };
+	img->SetOrigin(originT);
+	ImageType::DirectionType imageDirection;
+	imageDirection.SetIdentity();
+	img->SetDirection(imageDirection);
 
 	typedef itk::ImageToVTKImageFilter< ImageType> itkTovtkFilterType;
 	itkTovtkFilterType::Pointer itkTovtkImageFilter = itkTovtkFilterType::New();
-	itkTovtkImageFilter->SetInput(reader->GetOutput());
+	//itkTovtkImageFilter->SetInput(reader->GetOutput());
+	itkTovtkImageFilter->SetInput(img);
 	itkTovtkImageFilter->Update();
 
 	m_vtkImageFlip = vtkSmartPointer< vtkImageFlip >::New();
@@ -652,9 +702,111 @@ void PreDivideWidget::cutDataSlot(QList<QPointF>& l)
 	//CutingImagedata(image_data, volume, m_3DViewWidget.m_renderer, p, true);
 	if (m_curSelWorkType == toDaub)
 	{
-		QPolygonF p(l.toVector());
-		p.append(p[0]);
-		duabArea(p);
+		vtkSmartPointer<vtkCoordinate> coor_transfer = vtkSmartPointer<vtkCoordinate>::New();
+		coor_transfer->SetCoordinateSystemToDisplay();
+		QList<MyPosData> worldPos;
+		QList<MyPosData> worldPosIn;
+		auto camera = m_3DViewWidget.m_renderer->GetActiveCamera();
+		int dis = camera->GetDistance() * 2;
+		for (int i = 0; i < l.size(); ++i)
+		{
+			coor_transfer->SetValue(l[i].x(), m_3DViewWidget.height() - l[i].y(), 0);
+			auto world_point = coor_transfer->GetComputedWorldValue(m_3DViewWidget.m_renderer);
+			MyPosData t;
+			memcpy(t.d, world_point, sizeof(double) * 3);
+			worldPos.append(t);
+
+			auto cp = camera->GetPosition();
+			double vView[3];
+			vView[0] = t.d[0] - cp[0];
+			vView[1] = t.d[1] - cp[1];
+			vView[2] = t.d[2] - cp[2];
+			vtkMath::Normalize(vView);
+
+			MyPosData t2;
+			t2.d[0] = t.d[0] + dis * vView[0];
+			t2.d[1] = t.d[1] + dis * vView[1];
+			t2.d[2] = t.d[2] + dis * vView[2];
+			worldPosIn.append(t2);
+		}
+		vtkSmartPointer<vtkPolyData> geometry = vtkSmartPointer<vtkPolyData>::New();
+		vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+		for (size_t i = 0; i < worldPos.size(); ++i)
+		{
+			points->InsertPoint(2 * i, worldPos[i].d);
+			points->InsertPoint(2 * i + 1, worldPosIn[i].d);
+		}
+
+		vtkSmartPointer<vtkCellArray> polys = vtkSmartPointer<vtkCellArray>::New();
+		vtkSmartPointer<vtkCellArray> strips = vtkSmartPointer<vtkCellArray>::New();
+
+		// 前平面
+		polys->InsertNextCell(worldPos.size());
+		for (int i = 0; i < worldPos.size(); ++i) {
+			polys->InsertCellPoint(2 * i);
+		}
+
+		// 后平面
+		polys->InsertNextCell(worldPos.size());
+		for (int i = 0; i < worldPos.size(); ++i) {
+			polys->InsertCellPoint(2 * i + 1);
+		}
+
+		// 中间柱面
+		int sizeVec = worldPos.size() * 2;
+		strips->InsertNextCell(sizeVec + 2);
+		for (int i = 0; i < sizeVec; i++)
+			strips->InsertCellPoint(i);
+
+		strips->InsertCellPoint(0);
+		strips->InsertCellPoint(1);
+		geometry->SetPoints(points);
+		geometry->SetPolys(polys);
+		geometry->SetStrips(strips);
+
+		//polygonal data --> image stencil:
+		vtkSmartPointer<vtkPolyDataToImageStencil> pdtoImageStencil = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+		pdtoImageStencil->SetInputData(geometry);
+		pdtoImageStencil->SetOutputOrigin(image_data->GetOrigin());
+		pdtoImageStencil->SetOutputSpacing(image_data->GetSpacing());
+		pdtoImageStencil->SetOutputWholeExtent(image_data->GetExtent());
+		pdtoImageStencil->Update();
+
+		vtkSmartPointer<vtkImageStencilToImage> imageStencilToImage = vtkSmartPointer<vtkImageStencilToImage>::New();
+		imageStencilToImage->SetInputConnection(pdtoImageStencil->GetOutputPort());
+		imageStencilToImage->SetOutputScalarType(VTK_UNSIGNED_CHAR);
+		imageStencilToImage->SetInsideValue(0);
+		imageStencilToImage->SetOutsideValue(m_curOutValue);
+		imageStencilToImage->Update();
+		vtkSmartPointer<vtkImageMask> maskFilter =
+			vtkSmartPointer<vtkImageMask>::New();
+		maskFilter->SetMaskedOutputValue(0, 0, 0);
+		for (int i = 1; i <= m_MaxDataDimension; ++i)
+		{
+			if (m_labelVisible[i])
+			{
+				maskFilter->SetInputData(0, imagedata[i]);
+				maskFilter->SetInputData(1, imageStencilToImage->GetOutput());
+				maskFilter->Update();
+				imagedata[i]->DeepCopy(maskFilter->GetOutput());
+			}
+		}
+		vtkIdType count = image_data->GetNumberOfPoints();
+		unsigned char* p_c = (unsigned char*)imagedata[ui->m_daubValue->currentText().toInt()]->GetScalarPointer();
+		unsigned char value = (unsigned char)ui->m_daubValue->currentText().toInt();
+		for (int i = 1; i <= m_MaxDataDimension; ++i)
+		{
+			if (m_labelVisible[i])
+			{
+				unsigned char* p = (unsigned char*)m_restoreData[i]->GetScalarPointer();
+				unsigned char* p2 = (unsigned char*)imagedata[i]->GetScalarPointer();
+				for (vtkIdType t = 0; t < count; ++t)
+				{
+					if (int(p[t]) != int(p2[t]))
+						p_c[t] = value;
+				}
+			}
+		}
 	}
 
 	//用mask
@@ -924,7 +1076,14 @@ void PreDivideWidget::duabArea(const QPolygonF & polygon)
 	image_data->GetOrigin(img_origian);
 	vtkNew<vtkCoordinate> corrdinate;
 	corrdinate->SetCoordinateSystemToWorld();
+	vector<int> toChangeVec;
 	unsigned char value = (unsigned char)ui->m_daubValue->currentText().toInt();
+	for (size_t index = 1; index <= m_MaxDataDimension; ++index)
+	{
+		if (!m_labelVisible[index] || index == ui->m_daubValue->currentText().toInt())
+			continue;
+		toChangeVec.push_back(index);
+	}
 	for (int k = 0; k < img_dims[2]; ++k) {
 		for (int i = 0; i < img_dims[0]; ++i) {
 			for (int j = 0; j < img_dims[1]; ++j) {
@@ -936,13 +1095,18 @@ void PreDivideWidget::duabArea(const QPolygonF & polygon)
 				double *display_pos = corrdinate->GetComputedDoubleDisplayValue(m_3DViewWidget.m_renderer);
 				QPointF q_display_pos(display_pos[0], m_3DViewWidget.height() - display_pos[1]);
 				if (polygon.containsPoint(q_display_pos, Qt::OddEvenFill)) {
-					for (size_t index = 1; index <= m_MaxDataDimension; ++index)
+					bool b = false;
+					for (size_t index = 0; index < toChangeVec.size(); ++index)
 					{
-						if (!m_labelVisible[index])
-							continue;
-						auto pPixel = static_cast<unsigned char *>(imagedata[index]->GetScalarPointer(i, j, k));
+						auto pPixel = static_cast<unsigned char *>(imagedata[toChangeVec[index]]->GetScalarPointer(i, j, k));
 						if (*pPixel != 0)
-							*pPixel = value;
+							b = true;
+						*pPixel = 0;
+					}
+					if (b)
+					{
+						auto pPixel = static_cast<unsigned char *>(imagedata[value]->GetScalarPointer(i, j, k));
+						*pPixel = value;
 					}
 				}
 			}

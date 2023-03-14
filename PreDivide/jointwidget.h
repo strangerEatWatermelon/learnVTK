@@ -57,7 +57,7 @@ public:
 			if (m_func)
 				m_func();
 		}
-		vtkInteractorStyleTrackballCamera::OnLeftButtonDoubleClick();
+		//vtkInteractorStyleTrackballCamera::OnLeftButtonDoubleClick();
 	}
 };
 

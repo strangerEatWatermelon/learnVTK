@@ -87,6 +87,7 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2)
 #include <itkGDCMImageIO.h>
 #include <itkExtractImageFilter.h>
 #include <itkImage.h>
+#include <itkFlipImageFilter.h>
 
 using namespace std;
 #pragma comment(lib,"ws2_32.lib")
@@ -144,6 +145,12 @@ public:
 	}
 	vtkSmartPointer<vtkRenderer> m_renderer;
 	bool m_bDrawRandomArea = false;
+#if VTK_MAJOR_VERSION <= 8
+	vtkRenderWindow* renderWindow()
+	{
+		return GetRenderWindow();
+	}
+#endif
 signals:
 	void cutDataSignal(QList<QPointF> &l);
 protected:
