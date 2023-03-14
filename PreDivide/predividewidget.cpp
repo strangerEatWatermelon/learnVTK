@@ -142,6 +142,7 @@ void PreDivideWidget::on_OpenFile_clicked()
 	QString filePath = QFileDialog::getExistingDirectory(this, u8"请选择DICOM文件路径");
 	if (filePath.isEmpty())
 		return;
+	/*
 	typedef signed short    PixelType;
 	const unsigned int      Dimension = 3;
 	typedef itk::GDCMSeriesFileNames NamesGeneratorType;
@@ -184,17 +185,17 @@ void PreDivideWidget::on_OpenFile_clicked()
 	FlipImageFilterType::Pointer flipFilter = FlipImageFilterType::New();
 	flipFilter->SetInput(reader->GetOutput());
 	FlipImageFilterType::FlipAxesArrayType flipAxes;
-	double spacing[3];
-	double origin[3];
+	//double spacing[3];
+	//double origin[3];
 	double direction[9];
-	unsigned int dim[3];
+	//unsigned int dim[3];
 	memcpy(direction, &reader->GetOutput()->GetDirection()[0][0], 9 * sizeof(double));
-	memcpy(spacing, &reader->GetOutput()->GetSpacing(), 3 * sizeof(double));
-	memcpy(origin, &reader->GetOutput()->GetOrigin()[0], 3 * sizeof(double));
-	const itk::Size<3> & size = reader->GetOutput()->GetLargestPossibleRegion().GetSize();
-	dim[0] = size[0];
-	dim[1] = size[1];
-	dim[2] = size[2];
+	//memcpy(spacing, &reader->GetOutput()->GetSpacing(), 3 * sizeof(double));
+	//memcpy(origin, &reader->GetOutput()->GetOrigin()[0], 3 * sizeof(double));
+	//const itk::Size<3> & size = reader->GetOutput()->GetLargestPossibleRegion().GetSize();
+	//dimensions[0] = size[0];
+	//dimensions[1] = size[1];
+	//dimensions[2] = size[2];
 
 	if (direction[0] > 0)
 	{
@@ -203,7 +204,7 @@ void PreDivideWidget::on_OpenFile_clicked()
 	else
 	{
 		flipAxes[0] = true;
-		origin[0] -= (dim[0] - 1) * spacing[0];
+		//origin[0] -= (dimensions[0] - 1) * spacing[0];
 	}
 	if (direction[4] > 0)
 	{
@@ -212,7 +213,7 @@ void PreDivideWidget::on_OpenFile_clicked()
 	else
 	{
 		flipAxes[1] = true;
-		origin[1] -= (dim[1] - 1) * spacing[1];
+		//origin[1] -= (dimensions[1] - 1) * spacing[1];
 	}
 	if (direction[8] > 0)
 	{
@@ -221,16 +222,16 @@ void PreDivideWidget::on_OpenFile_clicked()
 	else
 	{
 		flipAxes[2] = true;
-		origin[2] -= (dim[2] - 1) * spacing[2];
+		//origin[2] -= (dimensions[2] - 1) * spacing[2];
 	}
 	flipFilter->SetFlipAxes(flipAxes);
 	flipFilter->Update();
 	ImageType::Pointer img = flipFilter->GetOutput();
-	const double  originT[3] = { origin[0],origin[1],origin[2] };
-	img->SetOrigin(originT);
-	ImageType::DirectionType imageDirection;
-	imageDirection.SetIdentity();
-	img->SetDirection(imageDirection);
+	//const double  originT[3] = { origin[0],origin[1],origin[2] };
+	//img->SetOrigin(originT);
+	//ImageType::DirectionType imageDirection;
+	//imageDirection.SetIdentity();
+	//img->SetDirection(imageDirection);
 
 	typedef itk::ImageToVTKImageFilter< ImageType> itkTovtkFilterType;
 	itkTovtkFilterType::Pointer itkTovtkImageFilter = itkTovtkFilterType::New();
@@ -247,6 +248,14 @@ void PreDivideWidget::on_OpenFile_clicked()
 	m_vtkImageFlip->GetOutput()->GetSpacing(spacing);
 	m_vtkImageFlip->GetOutput()->GetOrigin(origin);
 	m_vtkImageFlip->GetOutput()->GetDimensions(dimensions);
+	*/
+	vtkSmartPointer<vtkDICOMImageReader> DICOMreader = vtkSmartPointer<vtkDICOMImageReader>::New();
+	DICOMreader->SetDirectoryName(filePath.toLocal8Bit().toStdString().c_str());
+	DICOMreader->Update();
+	DICOMreader->GetOutput()->GetExtent(extent);
+	DICOMreader->GetOutput()->GetSpacing(spacing);
+	DICOMreader->GetOutput()->GetOrigin(origin);
+	DICOMreader->GetOutput()->GetDimensions(dimensions);
 
 	double center[3];
 	center[0] = origin[0] + spacing[0] * 0.5 * (extent[0] + extent[1]);
@@ -280,7 +289,8 @@ void PreDivideWidget::on_OpenFile_clicked()
 	resliceAxes->SetElement(2, 3, center[2]);
 
 	reslice1 = vtkSmartPointer<vtkImageReslice>::New();
-	reslice1->SetInputConnection(m_vtkImageFlip->GetOutputPort());
+	reslice1->SetInputConnection(DICOMreader->GetOutputPort());
+	//reslice1->SetInputConnection(m_vtkImageFlip->GetOutputPort());
 	reslice1->SetOutputDimensionality(2);
 	reslice1->SetResliceAxes(resliceAxes);
 	reslice1->SetInterpolationModeToLinear();
@@ -295,7 +305,8 @@ void PreDivideWidget::on_OpenFile_clicked()
 	
 
 	reslice2 = vtkSmartPointer<vtkImageReslice>::New();
-	reslice2->SetInputConnection(m_vtkImageFlip->GetOutputPort());
+	reslice2->SetInputConnection(DICOMreader->GetOutputPort());
+	//reslice2->SetInputConnection(m_vtkImageFlip->GetOutputPort());
 	reslice2->SetOutputDimensionality(2);
 	reslice2->SetResliceAxes(resliceSagittal);
 	reslice2->SetInterpolationModeToLinear();
@@ -309,7 +320,8 @@ void PreDivideWidget::on_OpenFile_clicked()
 	resliceCoronal->SetElement(2, 3, center[2]);
 
 	reslice3 = vtkSmartPointer<vtkImageReslice>::New();
-	reslice3->SetInputConnection(m_vtkImageFlip->GetOutputPort());
+	reslice3->SetInputConnection(DICOMreader->GetOutputPort());
+	//reslice3->SetInputConnection(m_vtkImageFlip->GetOutputPort());
 	reslice3->SetOutputDimensionality(2);
 	reslice3->SetResliceAxes(resliceCoronal);
 	reslice3->SetInterpolationModeToLinear();
